@@ -1,5 +1,5 @@
-from any_llm import completion
 import os
+from litellm import completion
 from pydantic import BaseModel
 from typing import List
 
@@ -90,103 +90,63 @@ class TextMCQ:
 
     def get_response(self, question: str, options: List[str]) -> ModelResponse:
         """
-        Asks a text-based multiple-choice question to an LLM via the OpenRouter provider
-        and returns the raw text response.
+        Asks a text-based multiple-choice question to an LLM using litellm
+        and returns a structured ModelResponse with response validation via Pydantic.
         """
         if not question:
             raise ValueError("The 'question' cannot be empty.")
         if not isinstance(options, list) or len(options) <= 1:
             raise ValueError("The 'options' must be a list with more than one element.")
-            
+
         user_prompt = self.prompt_generator.generate_prompt(question, options)
 
         messages = []
         if self.system_prompt:
             messages.append({"role": "system", "content": self.system_prompt})
-        
+
         messages.append({"role": "user", "content": user_prompt})
 
         response = completion(
             model=self.model,
-            provider=self.provider,
             messages=messages,
-            temperature=self.temperature
+            temperature=self.temperature,
+            response_format=ModelResponse
         )
 
-        raw_result = response.choices[0].message.content
-        return self.parse_llm_response(raw_result)
+        # response_format returns the parsed object directly for Pydantic models
+        if hasattr(response, 'parsed'):
+            return response.parsed
+        else:
+            return response
 
-    def parse_llm_response(self, raw_text: str) -> "ModelResponse":
-        """
-        Parses the raw text from the LLM and validates it using the Pydantic models.
-        """
-        lines = raw_text.strip().split('\n')
-        
-        # Extract the answer
-        answer_line = next((line for line in lines if line.startswith("Answer:")), None)
-        if not answer_line:
-            raise ValueError("Could not find 'Answer' line in LLM response.")
-        answer = answer_line.split(':')[1].strip()
-
-        # Extract the explanations
-        parsed_explanations = []
-        explanation_start_index = next((i for i, line in enumerate(lines) if "Explanations" in line), -1)
-        if explanation_start_index == -1:
-            raise ValueError("Could not find 'Explanations' section.")
-
-        explanation_lines = lines[explanation_start_index + 1:]
-        
-        for line in explanation_lines:
-            line = line.strip()
-            if not line:
-                continue
-            
-            # Check if the line starts with an option letter followed by a period.
-            if line and len(line) >= 2 and line[0].isalpha() and line[1] == '.':
-                option = line[0]
-                content = line[3:].strip()
-                
-                # Parse the True/False status and the explanation text
-                parts = content.split(':', 1)
-                if len(parts) != 2:
-                    continue
-                
-                is_correct = parts[0].strip().lower() == 'true'
-                text = parts[1].strip()
-                
-                parsed_explanations.append(Explanation(option=option, is_correct=is_correct, text=text))
-
-        if not parsed_explanations:
-            raise ValueError("No explanations found in LLM response.")
-
-        # Create the final Pydantic model
-        return ModelResponse(answer=answer, explanations=parsed_explanations)
 
 if __name__ == "__main__":
-    # Make sure you have the appropriate environment variable set
-    assert os.environ.get('OPENROUTER_API_KEY')
+    # Make sure you have the appropriate environment variables set
+    # For OpenAI models:
+    assert os.environ.get('OPENAI_API_KEY') or os.environ.get('OPENROUTER_API_KEY')
 
-    # Create an instance of the TextMCQ with a custom temperature and system prompt
+    # Create an instance of the TextMCQ
+    # Note: response_format requires models that support structured output (e.g., gpt-4o, gpt-4-turbo, etc.)
     textmcq = TextMCQ(
-        model="deepseek/deepseek-chat-v3.1:free",
-        provider="openrouter"
+        model="gpt-4o-2024-08-06",
+        provider="openai"
     )
 
     question = "Which of the following is an example of a renewable energy source?"
     options = ["Coal", "Natural Gas", "Solar Power", "Nuclear Energy", "Petroleum"]
-    
+
     try:
-        # Get the parsed Pydantic response from the LLM
+        # Get the parsed Pydantic response from the LLM with structured output
         response = textmcq.get_response(question, options)
 
         print(f"Question: {question}")
         print(f"Options: {options}")
-        
+
         print("\nParsed Pydantic Response:")
         print(f"Correct Answer: {response.answer}")
         print("\nExplanations:")
         for explanation in response.explanations:
             print(f"Option {explanation.option}: Correct? {explanation.is_correct}, Explanation: {explanation.text}")
-    except ValueError as e:
-        print(f"\nError processing LLM response: {e}")
+    except Exception as e:
+        print(f"\nError: {e}")
 

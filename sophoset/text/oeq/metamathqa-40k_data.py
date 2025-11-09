@@ -1,6 +1,9 @@
 from typing import Dict, Any, Optional
 import re
+
 from sophoset.core.base_hf_dataset import BaseHFDataset, QAData
+from sophoset.utils.dataset_exporter import DatasetExporter
+from sophoset.utils.dataset_explorer import DatasetExplorer
 
 class MetaMathQA40KDataset(BaseHFDataset):
     """A class to handle loading and managing the MetaMathQA-40K dataset."""
@@ -56,6 +59,7 @@ class MetaMathQA40KDataset(BaseHFDataset):
 
 if __name__ == "__main__":
     dset = MetaMathQA40KDataset()
-    
-    from sophoset.utils.dataset_exporter import DatasetExporter
-    DatasetExporter.save(dset, format='lmdb')
+    explorer = DatasetExplorer(dset)
+    for qa_data in explorer.next_question():
+        explorer.print_question(qa_data)
+    # DatasetExporter.save(dset, format='lmdb', output_dir='../../../../datasets')

@@ -1,7 +1,8 @@
 from typing import Dict, Any, List, Optional
 
-
 from sophoset.core.base_hf_dataset import BaseHFDataset, QAData
+from sophoset.utils.dataset_exporter import DatasetExporter
+from sophoset.utils.dataset_explorer import DatasetExplorer
 
 class MedQuadDataset(BaseHFDataset):
     """A class to handle loading and managing the MedicationQA dataset."""
@@ -34,6 +35,7 @@ class MedQuadDataset(BaseHFDataset):
 
 if __name__ == "__main__":
     dset = MedQuadDataset()
-    
-    from sophoset.utils.dataset_exporter import DatasetExporter
-    DatasetExporter.save(dset, format='lmdb')
+    explorer = DatasetExplorer(dset)
+    for qa_data in explorer.next_question():
+        explorer.print_question(qa_data)
+    # DatasetExporter.save(dset, format='lmdb', output_dir='../../../../datasets')

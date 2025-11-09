@@ -1,6 +1,8 @@
 from typing import Dict, Any
 
 from sophoset.core.base_hf_dataset import BaseHFDataset, QAData
+from sophoset.utils.dataset_exporter import DatasetExporter
+from sophoset.utils.dataset_explorer import DatasetExplorer
 
 class ImoGeometryDataset(BaseHFDataset):
     """A class to handle loading and managing the IMO Geometry dataset."""
@@ -31,6 +33,7 @@ class ImoGeometryDataset(BaseHFDataset):
 
 if __name__ == "__main__":
     dset = ImoGeometryDataset()
-    
-    from sophoset.utils.dataset_exporter import DatasetExporter
-    DatasetExporter.save(dset, format='lmdb')
+    explorer = DatasetExplorer(dset)
+    for qa_data in explorer.next_question():
+        explorer.print_question(qa_data)
+    # DatasetExporter.save(dset, format='lmdb', output_dir='../../../../datasets')

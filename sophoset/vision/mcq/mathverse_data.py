@@ -1,16 +1,17 @@
-from typing import Dict, Any, List, Optional, Literal
-
-import sys
-import os
 import re
+from typing import Dict, Any, List, Optional, Literal
+import os
+from pathlib import Path
 
 from sophoset.core.base_hf_dataset import BaseHFDataset, QAData
+from sophoset.utils.dataset_exporter import DatasetExporter
+from sophoset.utils.dataset_explorer import DatasetExplorer
 
 class MathVerseDataset(BaseHFDataset):
-    """A class to handle loading and interacting with the MathVista dataset."""
-    
+    """A class to handle loading and interacting with the MathVerse dataset."""
+
     DATASET_NAME = "AI4Math/MathVerse"
-    
+
     def __init__(self):
         """
         Initialize the dataset handler.
@@ -39,7 +40,7 @@ class MathVerseDataset(BaseHFDataset):
 
         # Extract the question part and clean up whitespace
         question_text = match.group(1).strip()
-        
+
         # Extract the raw options text
         options_text = match.group(2).strip()
 
@@ -50,34 +51,41 @@ class MathVerseDataset(BaseHFDataset):
         # Return the extracted data in a dictionary
         return question_text, options_list
 
-    
+
     def extract_row_data(self, row: Dict[str, Any], index: int) -> QAData:
         """
         Extract and format data from a dataset row.
-        
+
         Args:
             row: The dataset row to extract data from
             index: The index of the row in the dataset
-            
+
         Returns:
             QAData object containing the formatted row data
         """
         question = row.get('question', '')
-        options = row.get('options', [])
+        options_list = row.get('options', [])
         answer = row.get('answer', '')
-        
+
+        # Extract raw images - store as-is
+        images = row.get('image', [])
+        if not isinstance(images, list):
+            images = [images] if images else []
+
+        # Format options to dict with letter keys
+        formatted_options = self.get_formatted_options(options_list)
+
         return QAData(
             key=self.get_key(index),
             question=question,
-            options=options,
+            options=formatted_options,
             answer=answer,
-            image_path=row.get('image', '')
+            images=images
         )
 
 
 if __name__ == "__main__":
-    # Create the dataset
     dataset = MathVerseDataset()
-    
-    from sophoset.utils.dataset_exporter import DatasetExporter
-    DatasetExporter.save(dataset, format='lmdb')
+    explorer = DatasetExplorer(dataset)
+    for qa_data in explorer.next_question():
+        explorer.print_question(qa_data)

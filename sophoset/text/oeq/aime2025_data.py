@@ -1,6 +1,8 @@
 from typing import Dict, Any, List, Optional
 
 from sophoset.core.base_hf_dataset import BaseHFDataset, QAData
+from sophoset.utils.dataset_exporter import DatasetExporter
+from sophoset.utils.dataset_explorer import DatasetExplorer
 
 class Aime2025Dataset(BaseHFDataset):
     """A class to handle loading and managing the AIME 2025 dataset."""
@@ -26,9 +28,13 @@ class Aime2025Dataset(BaseHFDataset):
         question = row.get('question', '')
         
         # Extract options if they exist in the dataset
-        options = []
-        if 'options' in row and isinstance(row['options'], list):
-            options = row['options']
+        options = {}
+        if 'options' in row:
+            if isinstance(row['options'], list):
+                # Convert list to dict format with letter keys
+                options = {chr(65 + i): opt for i, opt in enumerate(row['options'])}
+            elif isinstance(row['options'], dict):
+                options = row['options']
         
         # Extract answer if it exists
         answer = row.get('answer', '')
@@ -42,6 +48,7 @@ class Aime2025Dataset(BaseHFDataset):
 
 if __name__ == "__main__":
     dset = Aime2025Dataset()
-    
-    from sophoset.utils.dataset_exporter import DatasetExporter
-    DatasetExporter.save(dset, format='lmdb')
+    explorer = DatasetExplorer(dset)
+    for qa_data in explorer.next_question():
+        explorer.print_question(qa_data)
+    # DatasetExporter.save(dset, format='lmdb', output_dir='../../../../datasets')

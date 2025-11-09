@@ -1,10 +1,8 @@
 from typing import Dict, Any, List, Optional
 
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from sophoset.core.base_hf_dataset import BaseHFDataset, QAData
+from sophoset.utils.dataset_exporter import DatasetExporter
+from sophoset.utils.dataset_explorer import DatasetExplorer
 
 class MedQuadMedQnADataset(BaseHFDataset):
     """A class to handle loading and managing the MedQuad-MedicalQnA dataset."""
@@ -37,6 +35,7 @@ class MedQuadMedQnADataset(BaseHFDataset):
 
 if __name__ == "__main__":
     dset = MedQuadMedQnADataset()
-    
-    from sophoset.utils.dataset_exporter import DatasetExporter
-    DatasetExporter.save(dset, format='lmdb')
+    explorer = DatasetExplorer(dset)
+    for qa_data in explorer.next_question():
+        explorer.print_question(qa_data)
+    # DatasetExporter.save(dset, format='lmdb', output_dir='../../../../datasets')
