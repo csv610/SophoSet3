@@ -1,16 +1,173 @@
 # SophoSet
 
-A unified framework for managing and evaluating datasets from Hugging Face Hub for vision-language models (VLMs) and large language models (LLMs). SophoSet provides a consistent interface to work with 100+ standardized datasets including text MCQ/OEQ datasets and vision datasets.
+## The Problem: Inconsistent Hugging Face Datasets
+
+Hugging Face Hub has 100+ amazing datasets for LLM evaluation, but they're **completely inconsistent**:
+
+```python
+# MMLU: "question", "choices", numeric answer
+mmlu = load_dataset("cais/mmlu")
+# {"question": "...", "choices": [...], "answer": 0}
+
+# GSM8K: "question", "answer" (no options!)
+gsm8k = load_dataset("openai/gsm8k")
+# {"question": "...", "answer": "..."}
+
+# AI2 ARC: "question", "choices.text", "answerKey"
+ai2_arc = load_dataset("allenai/ai2_arc")
+# {"question": "...", "choices": {"text": [...]}, "answerKey": "A"}
+
+# MathVista: "query", "options", "answer"
+mathvista = load_dataset("...")
+# {"query": "...", "options": [...], "answer": "..."}
+
+# ChartQA: "question", "image", "answer"
+chartqa = load_dataset("...")
+# {"question": "...", "image": Image, "answer": "..."}
+```
+
+**Result**: You spend **DAYS/WEEKS cleaning and normalizing data** before you can evaluate a single model.
+
+---
+
+## The Solution: One Standardized Format
+
+SophoSet transforms all 100+ datasets into a **single, consistent JSON structure**:
+
+```json
+{
+  "key": "anatomy/test/0",
+  "question": "The medial malleolus is part of which bone?",
+  "options": {
+    "A": "tibia",
+    "B": "fibula",
+    "C": "talus",
+    "D": "calcaneus"
+  },
+  "answer": "A",
+  "explanation": "The medial malleolus is a bony prominence on the medial surface of the tibia...",
+  "context": "",
+  "images": []
+}
+```
+
+**Same structure. Every dataset. No cleaning required.**
+
+---
+
+## Before & After
+
+### ❌ WITHOUT SophoSet (Traditional Approach)
+
+```python
+from datasets import load_dataset
+
+# Load 100 datasets with inconsistent APIs
+datasets = {}
+for ds_name in ["cais/mmlu", "openai/gsm8k", "allenai/ai2_arc", ...]:
+    datasets[ds_name] = load_dataset(ds_name)
+
+# Write custom cleaning code for EACH dataset
+cleaned_data = []
+
+# MMLU cleaning
+for item in datasets["cais/mmlu"]:
+    cleaned_data.append({
+        "question": item["question"],
+        "options": {chr(65+i): opt for i, opt in enumerate(item["choices"])},
+        "answer": chr(65 + item["answer"])
+    })
+
+# GSM8K cleaning (no options!)
+for item in datasets["openai/gsm8k"]:
+    cleaned_data.append({
+        "question": item["question"],
+        "options": {},  # No options for math
+        "answer": item["answer"]
+    })
+
+# AI2 ARC cleaning (different field names)
+for item in datasets["allenai/ai2_arc"]:
+    cleaned_data.append({
+        "question": item["question"],
+        "options": {k: v for k, v in zip("ABCDEFG", item["choices"]["text"])},
+        "answer": item["answerKey"]
+    })
+
+# MathVista cleaning (yet another format)
+for item in datasets["..."]:
+    # ... different cleaning logic ...
+    pass
+
+# Result: Weeks of cleaning, hundreds of lines of code
+# Then YOU have to write custom evaluation code for each format
+```
+
+### ✅ WITH SophoSet (Standardized Approach)
+
+```python
+from sophoset.text.mcq.mmlu_data import MMLUDataset
+from sophoset.text.oeq.gsm8k_data import GSM8KDataset
+from sophoset.vision.mcq.mathvista_data import MathVistaDataset
+from sophoset.vision.oeq.chartqa_data import ChartQADataset
+
+# All datasets return the SAME standardized QAData structure
+datasets = [
+    MMLUDataset(),
+    GSM8KDataset(),
+    MathVistaDataset(),
+    ChartQADataset()
+]
+
+# ONE evaluation code works for ALL 100+ datasets
+def evaluate_model(model, dataset_instance):
+    dataset_instance.load_dataset(split_name='test')
+    accuracy = 0
+
+    for sample in dataset_instance.get_samples():
+        # Same fields. Same format. Every time.
+        response = model.generate(
+            question=sample.question,
+            options=sample.options,      # Always {"A": "...", "B": "..."}
+            context=sample.context,      # Always a string
+            images=sample.images         # Always a list
+        )
+        if response == sample.answer:
+            accuracy += 1
+
+    return accuracy / dataset_instance.get_row_count()
+
+# Use with ANY dataset - code never changes
+for dataset in datasets:
+    accuracy = evaluate_model(my_llm, dataset)
+    print(f"Accuracy: {accuracy:.2%}")
+```
+
+**Result: Minutes of setup. No data cleaning. Pure evaluation.**
+
+---
+
+## Key Benefits
+
+✅ **Zero Data Cleaning**: All 100+ datasets normalized to standardized format
+✅ **One Evaluation Code**: Write once, test on all datasets
+✅ **Consistent QAData**: Every dataset has the same JSON structure
+✅ **Ready for LLMs**: Data formatted exactly as needed for model evaluation
+✅ **Production Ready**: Handles vision data, missing options, and edge cases
+✅ **Time Savings**: Days of cleaning → Minutes of setup
+
+---
 
 ## Features
 
-- **Unified Dataset Interface**: Consistent API across 100+ datasets from Hugging Face Hub
-- **Multiple Data Types**: Support for text (MCQ, OEQ) and vision (MCQ, OEQ) datasets
-- **Flexible Data Export**: Export datasets to JSON or LMDB format for efficient data storage
-- **Dataset Exploration**: Stream through datasets with automatic subset/split detection
-- **Robust Error Handling**: Comprehensive error handling and logging for production use
-- **Type-Safe**: Full type hints for better IDE support and code quality
-- **Easy to Extend**: Abstract base class pattern for adding new datasets
+- **100+ Standardized Datasets**: MMLU, GSM8K, MathVista, ChartQA, and 96+ more
+- **Unified QAData Format**: Consistent structure across all datasets (no cleaning!)
+- **Text & Vision Support**: MCQ/OEQ for text, vision datasets with image handling
+- **Flexible Data Export**: Export to JSON or LMDB for efficient storage
+- **Dataset Exploration**: Stream through datasets with automatic detection
+- **Robust Error Handling**: Comprehensive logging and validation
+- **Type-Safe**: Full type hints for IDE support
+- **Easy to Extend**: Simple pattern for adding new datasets
 
 ## Installation
 
