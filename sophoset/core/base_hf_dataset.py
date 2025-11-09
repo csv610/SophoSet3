@@ -5,29 +5,45 @@ This module provides a base class for handling various Hugging Face datasets
 with common functionality for loading, accessing, and processing dataset samples.
 """
 
-from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional, Union, Tuple
-from datasets import load_dataset, get_dataset_config_names, get_dataset_split_names
+import logging
 import base64
-from tqdm import tqdm
-from io import BytesIO
-from PIL import Image
-
-import random
 import json
 import os
-
+import random
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, asdict
+from io import BytesIO
+from pathlib import Path
+from typing import Dict, Any, List, Optional, Union, Tuple
+
+from datasets import load_dataset, get_dataset_config_names, get_dataset_split_names
+from PIL import Image
+from tqdm import tqdm
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class QAData:
+    """Standardized data structure for question-answer pairs.
+
+    Attributes:
+        key: Unique identifier for the sample
+        context: Optional contextual information
+        question: The question text
+        images: List of image data (URLs, base64, or PIL Images)
+        options: Dictionary of answer options (e.g., {'A': 'option1', 'B': 'option2'})
+        answer: The correct answer
+        explanation: Explanation of the correct answer
+        metadata: Additional metadata about the sample
+    """
     key: str
-    context : str = ""
+    context: str = ""
     question: str = ""
     images: List[Any] = field(default_factory=list)
-    options: List[str] = field(default_factory=list)
+    options: Dict[str, str] = field(default_factory=dict)
     answer: str = ""
     explanation: str = ""
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 class BaseHFDataset(ABC):
     """Base class for Hugging Face dataset handlers.
@@ -39,41 +55,48 @@ class BaseHFDataset(ABC):
     
     def __init__(self, dataset_name: str):
         """Initialize the dataset handler.
-        
+
         Args:
             dataset_name: Name of the dataset on Hugging Face Hub.
-            split: The data split to load (e.g., 'train', 'validation', 'test').
-                  If None, will try to determine available splits dynamically.
-            subset: The dataset subset/configuration to use. If None, will use the default subset.
         """
         self.dataset_name = dataset_name
         self.dataset = None
-        self.subset  = None
+        self.subset = None
+        self.split = None
+        logger.debug(f"Initialized dataset handler for {dataset_name}")
 
     def load_dataset(self, split_name: str, subset_name: str = 'default') -> None:
-        """Load the dataset from Hugging Face Hub with the specified split and subset
-        
+        """Load the dataset from Hugging Face Hub with the specified split and subset.
+
         Args:
             split_name: The name of the split to load (e.g., 'train', 'validation', 'test')
-            subset_name: Optional subset/configuration name. If None, loads the default subset.
-            
+            subset_name: Optional subset/configuration name. Defaults to 'default'.
+
         Raises:
             ValueError: If the specified subset or split is not available
             RuntimeError: If there's an error loading the dataset
         """
         try:
+            logger.info(f"Loading dataset {self.dataset_name} (subset: {subset_name}, split: {split_name})")
             self.split = split_name
             self.subset = subset_name
             self.dataset = load_dataset(self.dataset_name, subset_name)[split_name]
+            logger.info(f"Successfully loaded {len(self.dataset)} samples")
         except KeyError as e:
-            raise ValueError(
-                f"Split '{split_name}' not found in dataset {self.dataset_name} (subset: {subset_name}). "
-                f"Available splits: {self.get_splits(subset_name)}"
-            ) from e
+            available_splits = self.get_splits(subset_name)
+            error_msg = (
+                f"Split '{split_name}' not found in dataset {self.dataset_name} "
+                f"(subset: {subset_name}). Available splits: {available_splits}"
+            )
+            logger.error(error_msg)
+            raise ValueError(error_msg) from e
         except Exception as e:
-            raise RuntimeError(
-                f"Error loading {self.dataset_name} dataset (split: {split_name}, subset: {subset_name}): {str(e)}"
-            ) from e
+            error_msg = (
+                f"Error loading {self.dataset_name} dataset "
+                f"(split: {split_name}, subset: {subset_name}): {str(e)}"
+            )
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
 
     def is_dataset_loaded(self) -> bool:
         """Check if a dataset is currently loaded.
@@ -97,19 +120,47 @@ class BaseHFDataset(ABC):
         return set(self.dataset.column_names)
         
     @staticmethod
-    def get_formatted_options(options: List[str]) -> List[str]:
-        """Format choices with letters (A, B, C, ...) for display.
-        
+    def get_formatted_options(options: Union[List[str], Dict[str, str]]) -> Dict[str, str]:
+        """Format choices with letters (A, B, C, ..., Z) for display.
+
+        Converts a list of options to a dictionary with letter keys (A, B, C, etc.).
+        If the input is already a dictionary, returns it as-is.
+
         Args:
-            choices: List of choice strings
-            
+            options: List or Dict of choice strings
+
         Returns:
-            List of formatted choice strings with letters
+            Dict with letter keys (A, B, C, ..., Z) and option values
+
+        Example:
+            >>> options = ['Python', 'Java', 'C++', 'JavaScript']
+            >>> formatted = BaseHFDataset.get_formatted_options(options)
+            >>> print(formatted)
+            {'A': 'Python', 'B': 'Java', 'C': 'C++', 'D': 'JavaScript'}
+
+        Note:
+            Maximum 26 options (A-Z) are supported. Options beyond Z are ignored.
         """
         if not options:
-            return []
-        
-        return [f"{chr(65 + i)}. {opt}" for i, opt in enumerate(options)]
+            return {}
+
+        # If already a dict, return as is
+        if isinstance(options, dict):
+            return options
+
+        # If it's a list, convert to dict with letter keys
+        formatted = {}
+        # Generate letters from A to Z
+        letters = [chr(65 + i) for i in range(26)]
+        for i, opt in enumerate(options):
+            if i < len(letters):
+                formatted[letters[i]] = opt
+            else:
+                logger.warning(
+                    f"Option {i} ({opt}) exceeds maximum of 26 options. Skipping."
+                )
+
+        return formatted
     
     def get_row_count(self) -> int:
         """Return the total number of questions in the dataset.
@@ -126,16 +177,24 @@ class BaseHFDataset(ABC):
     
     def get_row_data(self, index: int) -> 'QAData':
         """Get data for a specific row by index.
-        
+
         Args:
             index: The index of the row to retrieve.
-            
+
         Returns:
             QAData object containing the row data.
-            
+
         Raises:
             RuntimeError: If no dataset is loaded
             IndexError: If the index is out of range
+
+        Example:
+            >>> from sophoset.text.mcq.mmlu_data import MMLUDataset
+            >>> dataset = MMLUDataset()
+            >>> dataset.load_dataset(split_name='test', subset_name='anatomy')
+            >>> sample = dataset.get_row_data(0)
+            >>> print(f"Question: {sample.question}")
+            >>> print(f"Answer: {sample.answer}")
         """
         if not self.is_dataset_loaded():
             raise RuntimeError("No dataset loaded. Call load_dataset() first.")
@@ -193,28 +252,65 @@ class BaseHFDataset(ABC):
                 row_data = self.get_row_data(idx)
                 samples.append(row_data)
             except Exception as e:
-                print(f"Error processing row {idx}: {str(e)}")
+                logger.warning(f"Error processing row {idx}: {str(e)}")
                 continue
-                
+
+        logger.debug(f"Successfully loaded {len(samples)} samples (requested: {max_samples})")
         return samples
     
     def get_subsets(self) -> List[str]:
         """Get the list of available subsets/configurations for a dataset.
-        
+
         Args:
             dataset_name: Name of the dataset on Hugging Face Hub.
-            
+
         Returns:
             List of available subset/configuration names.
-            
+
         Raises:
             ValueError: If the dataset cannot be accessed.
         """
         try:
             configs = get_dataset_config_names(self.dataset_name)
-            return configs 
+
+            # If we only get 'default' and the dataset isn't available on Hub,
+            # try to detect actual configs from the cache
+            if configs == ['default']:
+                cached_configs = self._get_cached_configs()
+                if cached_configs:
+                    return cached_configs
+
+            return configs
         except Exception as e:
+            # If getting configs from Hub fails, try to get them from cache
+            cached_configs = self._get_cached_configs()
+            if cached_configs:
+                return cached_configs
             raise ValueError(f"Error getting available subsets for dataset {self.dataset_name}: {str(e)}")
+
+    def _get_cached_configs(self) -> List[str]:
+        """Get available configurations from the local Hugging Face cache.
+
+        Returns:
+            List of configuration names found in cache, or empty list if none found.
+        """
+        try:
+            cache_dir = Path.home() / '.cache/huggingface/datasets'
+            # Convert dataset name format: 'allenai/ai2_arc' -> 'allenai___ai2_arc'
+            dataset_cache_name = self.dataset_name.replace('/', '___')
+            dataset_cache_path = cache_dir / dataset_cache_name
+
+            if dataset_cache_path.exists() and dataset_cache_path.is_dir():
+                # Get all subdirectories which represent configs
+                configs = [
+                    d.name for d in dataset_cache_path.iterdir()
+                    if d.is_dir()
+                ]
+                return sorted(configs) if configs else []
+        except Exception:
+            pass
+
+        return []
     
     def get_splits(self, subset) -> List[str]:
         """Get the list of available splits for a dataset (and optionally a specific subset).

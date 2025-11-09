@@ -73,7 +73,7 @@ packages = ["sophoset", "sophoset.core", "sophoset.text", "sophoset.text.mcq", "
 
 [tool.black]
 line-length = 100
-target-version = ['py38', 'py39', 'py40', 'py41', 'py12']
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
 include = '\.pyi?$'
 exclude = '''
 /(
