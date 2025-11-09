@@ -4,7 +4,7 @@
 
 ## Introduction
 
-The Hugging Face Hub contains over 100 publicly available evaluation datasets covering diverse domains—medical question answering, mathematical reasoning, visual question answering, and open-ended reasoning tasks. These datasets provide valuable benchmarks for evaluating large language models.
+The Hugging Face Hub contains a vast number of publicly available evaluation datasets covering diverse domains—medical question answering, mathematical reasoning, visual question answering, and open-ended reasoning tasks. These datasets provide valuable benchmarks for evaluating large language models.
 
 However, a systematic inconsistency exists across these datasets: they use different field names, data structures, and answer formats. This heterogeneity creates a preprocessing burden for researchers building evaluation frameworks that utilize multiple datasets.
 
@@ -80,7 +80,7 @@ This preprocessing step introduces overhead proportional to the number of datase
 
 ## SophoSet: A Unified Data Framework
 
-SophoSet provides a consistent data schema across 100+ evaluation datasets. All datasets are normalized to a single structure:
+SophoSet provides a consistent data schema across a wide range of evaluation datasets. All datasets are normalized to a single structure:
 
 ```python
 @dataclass
@@ -167,7 +167,7 @@ No custom preprocessing. No dataset-specific code paths. One consistent interfac
 
 ## Supported Datasets
 
-SophoSet currently covers 100+ datasets across multiple categories:
+SophoSet currently covers a wide range of datasets across multiple categories:
 
 **Text - Multiple Choice:**
 - AI2-ARC, AIME, BigBench Hard, Medical Meadow MedicalQA, Medical Concepts QA, MedMCQA, MedQA USMLE 4-Option, MMLU-Pro, SciQ, WinoGrande

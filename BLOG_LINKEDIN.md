@@ -4,7 +4,7 @@
 
 ## The Problem
 
-When evaluating large language models across multiple benchmarks, researchers encounter a fundamental challenge: dataset schemas are inconsistent. The Hugging Face Hub contains over 100 publicly available evaluation datasets, but they use different field naming conventions and data structures.
+When evaluating large language models across multiple benchmarks, researchers encounter a fundamental challenge: dataset schemas are inconsistent. The Hugging Face Hub contains a vast number of publicly available evaluation datasets that use different field naming conventions and data structures.
 
 **Examples:**
 
@@ -22,7 +22,7 @@ This heterogeneity requires custom transformation code for each dataset before t
 
 ## SophoSet: A Unified Data Framework
 
-SophoSet is an open-source framework that provides a consistent data schema across 100+ evaluation datasets. All datasets are normalized to a single structure:
+SophoSet is an open-source framework that provides a consistent data schema across a wide range of evaluation datasets. All datasets are normalized to a single structure:
 
 ```json
 {
