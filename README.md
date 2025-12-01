@@ -259,34 +259,27 @@ storage.close()
 ## Supported Datasets
 
 ### Text MCQ Datasets (11)
-- MMLU (Massive Multitask Language Understanding)
-- MMLU Pro
 - AI2 ARC
-- SciQ
 - AIME
 - BigBench Hard
-- Winogrande
 - MedMCQA
-- Medical Meadow MedicalQA
 - Medical Concepts QA
+- Medical Meadow MedicalQA
 - MedQA USMLE 4 Options
+- MMLU (Massive Multitask Language Understanding)
+- MMLU Pro
+- SciQ
+- Winogrande
 
 ### Text OEQ Datasets (26)
-- GSM8K (Grade School Math)
-- GSM+ (Enhanced Grade School Math)
 - AIME 2025
-- MathPlus
-- GPQA (Google-Proof Question Answering)
-- TruthfulQA
-- Pubmed QA
-- SafetyBench
-- Math LightEval
-- IMO Geometry
-- Olympiads
-- Toxic Prompts
 - DeepScaleR
-- SimpleQA
-- SciBench
+- GPQA (Google-Proof Question Answering)
+- GSM+ (Enhanced Grade School Math)
+- GSM8K (Grade School Math)
+- IMO Geometry
+- Math LightEval
+- MathPlus
 - MedQA
 - Medical Meadow Flashcards
 - Medical Meadow Wikidoc
@@ -298,17 +291,24 @@ storage.close()
 - MetaMathQA
 - MetaMathQA 40K
 - Open Medical Cases
+- Olympiads
+- Pubmed QA
+- SafetyBench
+- SciBench
+- SimpleQA
+- Toxic Prompts
+- TruthfulQA
 
 ### Vision MCQ Datasets (9)
 - AI2D (Artificial Intelligence 2 Diagrams)
-- MathVista
-- MathVerse
-- MathVision
-- MathV360K
-- ScienceQA
-- World Medical QA
 - Blink
 - Hidden Flaws GPT-4V
+- MathV360K
+- MathVerse
+- MathVision
+- MathVista
+- ScienceQA
+- World Medical QA
 
 ### Vision OEQ Datasets (26)
 - Animals
