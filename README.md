@@ -258,7 +258,7 @@ storage.close()
 
 ## Supported Datasets
 
-### Text MCQ Datasets (13+)
+### Text MCQ Datasets (11)
 - MMLU (Massive Multitask Language Understanding)
 - MMLU Pro
 - AI2 ARC
@@ -267,30 +267,76 @@ storage.close()
 - BigBench Hard
 - Winogrande
 - MedMCQA
-- And more...
+- Medical Meadow MedicalQA
+- Medical Concepts QA
+- MedQA USMLE 4 Options
 
-### Text OEQ Datasets (27+)
+### Text OEQ Datasets (26)
 - GSM8K (Grade School Math)
+- GSM+ (Enhanced Grade School Math)
+- AIME 2025
 - MathPlus
-- GPQA
+- GPQA (Google-Proof Question Answering)
 - TruthfulQA
 - Pubmed QA
-- Medical datasets
-- And more...
+- SafetyBench
+- Math LightEval
+- IMO Geometry
+- Olympiads
+- Toxic Prompts
+- DeepScaleR
+- SimpleQA
+- SciBench
+- MedQA
+- Medical Meadow Flashcards
+- Medical Meadow Wikidoc
+- Medical Questions
+- Medication QA
+- MedQnA V3
+- MedQuad
+- MedQuad MedQnA
+- MetaMathQA
+- MetaMathQA 40K
+- Open Medical Cases
 
-### Vision MCQ Datasets (10+)
-- AI2D
+### Vision MCQ Datasets (9)
+- AI2D (Artificial Intelligence 2 Diagrams)
 - MathVista
+- MathVerse
+- MathVision
+- MathV360K
 - ScienceQA
+- World Medical QA
 - Blink
-- And more...
+- Hidden Flaws GPT-4V
 
-### Vision OEQ Datasets (30+)
+### Vision OEQ Datasets (26)
+- Animals
+- CAMO (Camouflaged Object Detection)
 - ChartQA
-- DocVQA
-- TextVQA
-- VQA-RAD
-- And more...
+- Chest X-Ray Pneumonia
+- CulturalVQA
+- DocVQA (Document Visual Question Answering)
+- IAM Line (Handwriting Recognition)
+- IAM Sentences (Handwriting Recognition)
+- IllusionBench
+- InfoVQA
+- Kvasir VQA (Medical)
+- Kvasir VQA X1 (Medical)
+- MMSTAR
+- OCR Bench V2
+- Olympiad Bench
+- Olympic Arena
+- Open Medical Case Images
+- Open Medical Images
+- PD12M (Panoramic Dental)
+- RealWorld QA
+- ROCO (Radiology Common)
+- SNLI-VE (Visual Entailment)
+- TextVQA (Text Visual Question Answering)
+- VisitBench
+- VLMs Are Blind
+- VQA-RAD (Visual Question Answering - Radiology)
 
 ## Architecture
 
