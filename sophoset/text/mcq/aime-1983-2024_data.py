@@ -51,7 +51,6 @@ class AimeDataset(BaseHFDataset):
 
 if __name__ == "__main__":
     dset = AimeDataset()
-#   DatasetExporter.save(dset, format='lmdb', output_dir='../../../datasets')
     explorer = DatasetExplorer(dset)
 
     # Print each question using the explorer's print_question method
