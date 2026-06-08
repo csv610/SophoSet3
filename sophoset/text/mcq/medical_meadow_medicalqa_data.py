@@ -6,7 +6,7 @@ from sophoset.core.base_hf_dataset import BaseHFDataset, QAData
 from sophoset.utils.dataset_exporter import DatasetExporter
 from sophoset.utils.dataset_explorer import DatasetExplorer
 
-class MedicalMedowMedQADataset(BaseHFDataset):
+class MedicalMeadowMedQADataset(BaseHFDataset):
     """A class to handle loading and managing the MedicalMeadowMedQA dataset."""
     
     DATASET_NAME = "medalpaca/medical_meadow_medqa"
@@ -79,7 +79,7 @@ class MedicalMedowMedQADataset(BaseHFDataset):
 
 
 if __name__ == "__main__":
-    dset = MedicalMedowMedQADataset()
+    dset = MedicalMeadowMedQADataset()
 
     # DatasetExporter.save(dset, format='lmdb', output_dir='../../../datasets')
     explorer = DatasetExplorer(dset)

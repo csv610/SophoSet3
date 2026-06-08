@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 from sophoset.core.base_hf_dataset import BaseHFDataset
 from sophoset.utils.lmdb_storage import DataStorage
 
-from text_oeq import TextOEQ
+from .text_oeq import TextOEQ
 
 @dataclass
 class DataConfig:

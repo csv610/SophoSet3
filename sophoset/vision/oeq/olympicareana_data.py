@@ -27,7 +27,7 @@ class OlympicArenaDataset(BaseHFDataset):
             QAData object containing the formatted row data
         """
         question = row.get('problem', '')
-        answer = ''  # This dataset doesn't seem to have answers in the row
+        answer = ''  # TODO: extract answer field once available
 
         # Process image URLs - extract raw images
         images = []
